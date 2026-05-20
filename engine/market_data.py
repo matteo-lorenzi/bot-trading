@@ -11,7 +11,7 @@ class MarketDataFeed:
             secret_key=config.ALPACA_SECRET_KEY,
         )
 
-    async def get_latest_bar(self, symbol: str) -> Bar:
+    def get_latest_bar(self, symbol: str) -> Bar:
         request = StockLatestBarRequest(symbol_or_symbols=symbol)
         response = self._client.get_stock_latest_bar(request)
         b = response[symbol]

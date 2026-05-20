@@ -11,8 +11,7 @@ def _make_feed(mock_client):
         return MarketDataFeed()
 
 
-@pytest.mark.asyncio
-async def test_get_latest_bar_returns_bar():
+def test_get_latest_bar_returns_bar():
     mock_client = MagicMock()
     mock_bar = MagicMock(
         timestamp=datetime(2026, 5, 19, 14, 30, tzinfo=timezone.utc),
@@ -24,15 +23,14 @@ async def test_get_latest_bar_returns_bar():
     )
     mock_client.get_stock_latest_bar.return_value = {"AAPL": mock_bar}
     feed = _make_feed(mock_client)
-    bar = await feed.get_latest_bar("AAPL")
+    bar = feed.get_latest_bar("AAPL")
     assert isinstance(bar, Bar)
     assert bar.symbol == "AAPL"
     assert bar.close == 150.0
     assert bar.volume == 1000000
 
 
-@pytest.mark.asyncio
-async def test_get_latest_bar_passes_correct_symbol():
+def test_get_latest_bar_passes_correct_symbol():
     mock_client = MagicMock()
     mock_bar = MagicMock(
         timestamp=datetime.now(timezone.utc),
@@ -40,5 +38,5 @@ async def test_get_latest_bar_passes_correct_symbol():
     )
     mock_client.get_stock_latest_bar.return_value = {"TSLA": mock_bar}
     feed = _make_feed(mock_client)
-    bar = await feed.get_latest_bar("TSLA")
+    bar = feed.get_latest_bar("TSLA")
     assert bar.symbol == "TSLA"

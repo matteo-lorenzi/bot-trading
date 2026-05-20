@@ -40,10 +40,12 @@ class AlpacaBroker:
             time_in_force=TimeInForce.DAY,
         )
         order = self._client.submit_order(request)
+        if order.filled_avg_price is None:
+            raise RuntimeError(f"Order for {symbol} did not fill: status={order.status}")
         return Trade(
             symbol=symbol,
             side=side,
             qty=qty,
-            price=float(order.filled_avg_price or 0),
+            price=float(order.filled_avg_price),
             timestamp=datetime.now(timezone.utc),
         )

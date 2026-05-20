@@ -44,3 +44,14 @@ def test_submit_order_returns_trade():
     assert trade.symbol == "AAPL"
     assert trade.side == "buy"
     assert trade.price == 152.50
+
+
+def test_submit_order_raises_on_unfilled():
+    mock_client = MagicMock()
+    mock_client.submit_order.return_value = MagicMock(
+        filled_avg_price=None,
+        status="pending"
+    )
+    broker = _make_broker(mock_client)
+    with pytest.raises(RuntimeError, match="did not fill"):
+        broker.submit_order("AAPL", qty=1, side="buy")
