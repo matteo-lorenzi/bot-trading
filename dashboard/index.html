@@ -1,1 +1,92 @@
-<!DOCTYPE html><html><body>Loading...</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trading Bot</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 2rem; }
+    h1 { color: #0f0; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #333; padding: 0.5rem 1rem; text-align: left; }
+    th { background: #222; }
+    .positive { color: #0f0; }
+    .negative { color: #f44; }
+    #status { font-size: 1.2rem; margin-bottom: 1rem; }
+    #account { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Trading Bot</h1>
+  <div id="status">Status: connecting...</div>
+  <div id="account">Equity: — | Buying Power: —</div>
+
+  <h2>Open Positions</h2>
+  <table id="positions-table">
+    <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Entry</th><th>Current</th><th>Unrealized P&L</th></tr></thead>
+    <tbody id="positions-body"><tr><td colspan="5">—</td></tr></tbody>
+  </table>
+
+  <h2>Recent Trades</h2>
+  <table id="trades-table">
+    <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Time</th></tr></thead>
+    <tbody id="trades-body"><tr><td colspan="5">—</td></tr></tbody>
+  </table>
+
+  <script>
+    const fmt = (n) => Number(n).toFixed(2);
+
+    function connect() {
+      const ws = new WebSocket(`ws://${location.host}/ws`);
+
+      ws.onmessage = (event) => {
+        const d = JSON.parse(event.data);
+
+        document.getElementById("status").textContent =
+          `Status: ${d.status} | Last signal: ${d.last_signal?.symbol ?? "—"} ${d.last_signal?.action ?? ""}`;
+
+        document.getElementById("account").textContent =
+          `Equity: $${fmt(d.equity)} | Buying Power: $${fmt(d.buying_power)}`;
+
+        const posBody = document.getElementById("positions-body");
+        if (d.positions.length === 0) {
+          posBody.innerHTML = "<tr><td colspan='5'>No open positions</td></tr>";
+        } else {
+          posBody.innerHTML = d.positions.map(p => {
+            const pl = Number(p.unrealized_pl);
+            const cls = pl >= 0 ? "positive" : "negative";
+            return `<tr>
+              <td>${p.symbol}</td>
+              <td>${p.qty}</td>
+              <td>$${fmt(p.avg_entry_price)}</td>
+              <td>$${fmt(p.current_price)}</td>
+              <td class="${cls}">$${fmt(pl)}</td>
+            </tr>`;
+          }).join("");
+        }
+
+        const trBody = document.getElementById("trades-body");
+        if (d.recent_trades.length === 0) {
+          trBody.innerHTML = "<tr><td colspan='5'>No trades yet</td></tr>";
+        } else {
+          trBody.innerHTML = [...d.recent_trades].reverse().map(t =>
+            `<tr>
+              <td>${t.symbol}</td>
+              <td>${t.side.toUpperCase()}</td>
+              <td>${t.qty}</td>
+              <td>$${fmt(t.price)}</td>
+              <td>${new Date(t.timestamp).toLocaleTimeString()}</td>
+            </tr>`
+          ).join("");
+        }
+      };
+
+      ws.onclose = () => {
+        document.getElementById("status").textContent = "Status: disconnected — reconnecting...";
+        setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+  </script>
+</body>
+</html>
