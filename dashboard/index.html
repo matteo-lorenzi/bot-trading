@@ -35,6 +35,19 @@
   <script>
     const fmt = (n) => Number(n).toFixed(2);
 
+    function el(tag, text, cls) {
+      const e = document.createElement(tag);
+      if (text !== undefined) e.textContent = text;
+      if (cls) e.className = cls;
+      return e;
+    }
+
+    function row(...cells) {
+      const tr = document.createElement("tr");
+      cells.forEach(c => tr.appendChild(c));
+      return tr;
+    }
+
     function connect() {
       const ws = new WebSocket(`ws://${location.host}/ws`);
 
@@ -48,35 +61,40 @@
           `Equity: $${fmt(d.equity)} | Buying Power: $${fmt(d.buying_power)}`;
 
         const posBody = document.getElementById("positions-body");
+        posBody.replaceChildren();
         if (d.positions.length === 0) {
-          posBody.innerHTML = "<tr><td colspan='5'>No open positions</td></tr>";
+          const td = el("td", "No open positions");
+          td.colSpan = 5;
+          posBody.appendChild(row(td));
         } else {
-          posBody.innerHTML = d.positions.map(p => {
+          d.positions.forEach(p => {
             const pl = Number(p.unrealized_pl);
-            const cls = pl >= 0 ? "positive" : "negative";
-            return `<tr>
-              <td>${p.symbol}</td>
-              <td>${p.qty}</td>
-              <td>$${fmt(p.avg_entry_price)}</td>
-              <td>$${fmt(p.current_price)}</td>
-              <td class="${cls}">$${fmt(pl)}</td>
-            </tr>`;
-          }).join("");
+            posBody.appendChild(row(
+              el("td", p.symbol),
+              el("td", String(p.qty)),
+              el("td", `$${fmt(p.avg_entry_price)}`),
+              el("td", `$${fmt(p.current_price)}`),
+              el("td", `$${fmt(pl)}`, pl >= 0 ? "positive" : "negative"),
+            ));
+          });
         }
 
         const trBody = document.getElementById("trades-body");
+        trBody.replaceChildren();
         if (d.recent_trades.length === 0) {
-          trBody.innerHTML = "<tr><td colspan='5'>No trades yet</td></tr>";
+          const td = el("td", "No trades yet");
+          td.colSpan = 5;
+          trBody.appendChild(row(td));
         } else {
-          trBody.innerHTML = [...d.recent_trades].reverse().map(t =>
-            `<tr>
-              <td>${t.symbol}</td>
-              <td>${t.side.toUpperCase()}</td>
-              <td>${t.qty}</td>
-              <td>$${fmt(t.price)}</td>
-              <td>${new Date(t.timestamp).toLocaleTimeString()}</td>
-            </tr>`
-          ).join("");
+          [...d.recent_trades].reverse().forEach(t => {
+            trBody.appendChild(row(
+              el("td", t.symbol),
+              el("td", t.side.toUpperCase()),
+              el("td", String(t.qty)),
+              el("td", `$${fmt(t.price)}`),
+              el("td", new Date(t.timestamp).toLocaleTimeString()),
+            ));
+          });
         }
       };
 
