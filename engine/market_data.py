@@ -9,7 +9,6 @@ class MarketDataFeed:
         self._client = StockHistoricalDataClient(
             api_key=config.ALPACA_API_KEY,
             secret_key=config.ALPACA_SECRET_KEY,
-            url_override=config.ALPACA_BASE_URL,
         )
 
     def get_latest_bar(self, symbol: str) -> Bar:
