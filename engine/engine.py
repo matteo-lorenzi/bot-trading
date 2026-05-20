@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import logging
+from collections import deque
 from datetime import datetime, timezone
 
 import config
@@ -19,7 +20,7 @@ class TradingEngine:
         self._strategy: Strategy = strategy or self._load_strategy()
         self._ws_hub = ws_hub
         self._running = False
-        self._recent_trades: list[Trade] = []
+        self._recent_trades: deque[Trade] = deque(maxlen=200)
         self._last_signal: dict = {}
 
     def _load_strategy(self) -> Strategy:
@@ -44,7 +45,7 @@ class TradingEngine:
     async def _tick(self):
         for symbol in config.SYMBOLS:
             try:
-                bar = self._feed.get_latest_bar(symbol)   # sync call, no await
+                bar = await asyncio.to_thread(self._feed.get_latest_bar, symbol)
                 signal = await self._strategy.on_bar(symbol, bar)
                 self._last_signal = {
                     "symbol": symbol,
@@ -76,6 +77,6 @@ class TradingEngine:
             "equity": account["equity"],
             "buying_power": account["buying_power"],
             "positions": positions,
-            "recent_trades": [t.to_dict() for t in self._recent_trades[-20:]],
+            "recent_trades": [t.to_dict() for t in list(self._recent_trades)[-20:]],
             "last_signal": self._last_signal,
         }

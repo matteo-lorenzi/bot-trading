@@ -12,6 +12,7 @@ class AlpacaBroker:
             api_key=config.ALPACA_API_KEY,
             secret_key=config.ALPACA_SECRET_KEY,
             paper=True,
+            url_override=config.ALPACA_BASE_URL,
         )
 
     def get_account(self) -> dict:

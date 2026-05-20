@@ -27,7 +27,7 @@ async def _run():
     app = create_app(engine, hub)
 
     server_config = uvicorn.Config(
-        app, host="0.0.0.0", port=8000, log_level="info"
+        app, host="127.0.0.1", port=8000, log_level="info"
     )
     server = uvicorn.Server(server_config)
 
